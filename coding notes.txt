@@ -1,0 +1,29 @@
+Coding notes - 
+1. if v is a string eg. "dfgsdfg" then v=v[0:-1] will consider v as a list of string
+
+2. if you want to skip every alternate line, use the code used in D:\M.Tech work\code for finding matches in qfilter.py
+
+3. whenever reading a file with lines, always use .readlines() insead of .read() etc. Eg. in D:\M.Tech work\find occurence of each filter element in qfilter.py , 
+using f.read() gave wrong count for may words, while readlines gave all correct answers
+
+4. mutant.*?causes 
+		is probably better than 
+	mutant\s.*?\scauses 
+as the previous will match 'mutant causes' and 'mutant dsgkln sfj jf causes' both but the latter will not match 'mutant causes'
+
+5. You need to escape the all_keys and gs. 
+		if re.search(r'(%s-deletion\s.*?\s%s)' % (re.escape(all_keys), re.escape(gs)), s, re.I|re.S): 
+				instead of 
+		if re.search(r'(%s-deletion\s.*?\s%s)' % (all_keys, gs), s, re.I|re.S):  
+				otherwise it will take all_keys and gs as regexes.
+		
+6. For creating a list, use
+	c=[]
+	c.append(d)               
+				instead of
+	k=0
+	c=[]	
+	c[k]=d 
+	k=k+1
+				as the list is empty, so in the latter case, you're attempting to write to element [0] in the first iteration, which doesn't exist yet.
+				it gives 'IndexError: list assignment index out of range'
