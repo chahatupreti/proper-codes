@@ -50,6 +50,10 @@ rt2 = open(r'L:\My Online Documents\MTech\ruless occurence\treated two.txt', 'w'
 rs4 = open(r'L:\My Online Documents\MTech\ruless occurence\minus three7.txt', 'w')
 rs5 = open(r'L:\My Online Documents\MTech\ruless occurence\plus two.txt', 'w')
 rs6 = open(r'L:\My Online Documents\MTech\ruless occurence\plus three.txt', 'w')
+ra5 = open(r'F:\M.Tech\for assigning cl\rules occurence\s\activation five.txt', 'w')
+ri5 = open(r'F:\M.Tech\for assigning cl\rules occurence\s\induced five.txt', 'w')
+ro1 = open(r'F:\M.Tech\for assigning cl\rules occurence\s\overexpression one.txt', 'w')
+rt3 = open(r'F:\M.Tech\for assigning cl\rules occurence\s\treatment one.txt', 'w')
 #rrr = open(r'L:\My Online Documents\MTech\goodthree.txt', 'w')
 
 
@@ -119,10 +123,10 @@ def find_matches(s, gmk):
                         #print file
                         #print gs, gmk
                         #print "Number of occurences: ", len(data)
-                        aq = data[i]
-                        loq = min(aq[1], aq[2])
-                        hiq = max(aq[1], aq[2])
-                        brrq = lt[max(0, loq-6):hiq+6]
+                        aq = data[i] # in data, (2,8,6) means -> 2 = difference b/w gs and gmk, 8 = position of gs, 6 = position of gmk 
+                        loq = min(aq[1], aq[2]) # find the lower position among gs and gmk
+                        hiq = max(aq[1], aq[2]) # find the higher position among gs and gmk
+                        brrq = lt[max(0, loq-6):hiq+6] # generate the phrase around a closely occuring gs and gmk
                         brq = " ".join(brrq) 
                         
                         if data[i][0]<4:  # if r less than 4
@@ -158,15 +162,17 @@ def cl(s1, gmk1, gs1, gs_list1, data1): # output will be the confidence level
     #l = re.split('\s|(?<!\d)[,.]|[,.](?!\d)|;|"|\'|[()]|-', s)  KEEP THIS AS AN ARCHIVE
     l = s1.split()  # i switched from the complex split above to just space split to ensure that the splitters can be part of a rule
     
+# ----------------- GENERAL RULES ---------------------------------------    
+    
     beg_gmk = ['over-activation', 'overexpression', 'loss of', 'knockout', 'haplo-insuffiency', 'haploinsufficiency', 'inactivation', 'knock-out', 'deletion', 'inhibition', 'knockdown', 'silencing']
     beg_other = ['Global gene expression', 'Gene expression profiling', 'Expression data', 'Gene expression analysis']
     for i in range(0,len(beg_gmk)):
-        if re.search(r'(^!Series_.*?\s"%s)' %beg_gmk[i], s1, re.I|re.S):   # this rule looks optimum
+        if re.search(r'(^!Series_.*?\s"%s\s)' %beg_gmk[i], s1, re.I|re.S):   # this rule looks optimum
             rr1.write(file)
             rr1.write('\n')
             rr1.write(gs11)
             rr1.write('\n')
-            rr1.write('Found %s in %s' % (gmk1,s1.strip()))
+            rr1.write('Found %s in %s' % (beg_gmk[i],s1.strip()))
             rr1.write('\n')
 
     for i in range(0,len(beg_other)):
@@ -175,7 +181,7 @@ def cl(s1, gmk1, gs1, gs_list1, data1): # output will be the confidence level
             rg2.write('\n')
             rg2.write(gs11)
             rg2.write('\n')
-            rg2.write('Found %s in %s' % (gmk1,s1.strip()))
+            rg2.write('Found %s in %s' % (beg_other[i],s1.strip()))
             rg2.write('\n')
 
     if re.search(r'(^!Series_\w.*?\s"Keywords:)', s1):
@@ -219,7 +225,7 @@ def cl(s1, gmk1, gs1, gs_list1, data1): # output will be the confidence level
         rg5.write('Found %s in %s' % (gmk1,s1.strip()))
         rg5.write('\n')
  
-    
+# ------------------------- HIT(OR MATCH) SPECIFIC RULES --------------------------------------    
     
     for ii in range(0,len(data1)):
         #print 'loop'
@@ -521,6 +527,47 @@ def cl(s1, gmk1, gs1, gs_list1, data1): # output will be the confidence level
                 rt2.write('\n')
                 rt2.write('Found %s in %s' % (gmk1,s1.strip()))
                 rt2.write('\n')
+                
+        if gmk1 == 'activation':
+            if  re.search(r'(activation of %s)' %gs1, br0, re.I):
+                ra5.write(file)
+                ra5.write('\n')
+                ra5.write(gs11)
+                ra5.write('\n')
+                ra5.write(br0)
+                ra5.write('\n')
+                ra5.write('Found %s in %s' % (gmk1,s1.strip()))
+                ra5.write('\n')
+        if gmk1 == 'induced':
+            if  re.search(r'(induced in response to %s)' %gs1, br0, re.I):
+                ri5.write(file)
+                ri5.write('\n')
+                ri5.write(gs11)
+                ri5.write('\n')
+                ri5.write(br0)
+                ri5.write('\n')
+                ri5.write('Found %s in %s' % (gmk1,s1.strip()))
+                ri5.write('\n')
+        if gmk1 == 'overexpression':
+            if  (re.search(r'(%s.*?overexpression)' %gs1, br0, re.I) or re.search(r'(%s.*?overexpression)' %gs1, br0, re.I)):
+                ro1.write(file)
+                ro1.write('\n')
+                ro1.write(gs11)
+                ro1.write('\n')
+                ro1.write(br0)
+                ro1.write('\n')
+                ro1.write('Found %s in %s' % (gmk1,s1.strip()))
+                ro1.write('\n')
+        if gmk1 == 'treatment':
+            if  re.search(r'(treatment.*?with %s)' %gs1, br0, re.I):
+                rt3.write(file)
+                rt3.write('\n')
+                rt3.write(gs11)
+                rt3.write('\n')
+                rt3.write(br0)
+                rt3.write('\n')
+                rt3.write('Found %s in %s' % (gmk1,s1.strip()))
+                rt3.write('\n')
  
     return 4        
 
@@ -561,6 +608,10 @@ def closef():
     rs4.close()
     rs5.close()
     rs6.close() 
+    ra5.close()
+    ri5.close()
+    ro1.close()
+    rt3.close()
     #rrr.close()
             
 
@@ -592,6 +643,4 @@ for path, dirs, files in os.walk(r'L:\My Online Documents\MTech\series_imp_info'
                     find_matches(s, gmk)
 closef()
 print("--- %s seconds ---" % (time.time() - start_time))
-      
-          
     

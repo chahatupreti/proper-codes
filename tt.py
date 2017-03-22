@@ -1,5 +1,6 @@
 import os
 n=0
+# THIS CODE REMOVES COMMON ENGLISH WORDS FROM THE HUMAN GENE LIST	
 with open(os.path.join('F:\M.Tech', 'top 1000 english common words.txt'),'r') as d:
      rlist = d.readlines()
 with open('C:\Users\Krishna\Desktop\gene symbols\homo sapiens_gene_symbols1.txt','r') as m:

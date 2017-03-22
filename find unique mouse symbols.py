@@ -1,3 +1,5 @@
+
+# THIS CODE FINDS UNIQUE GENE SYMBOLS FROM A LIST OF SYMBOLS, MANY OF WHICH MAY MAY BE REPEATED
 def unique(source):
     sofar = {}
     for val in open(source):
