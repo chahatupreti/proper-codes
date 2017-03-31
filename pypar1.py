@@ -38,11 +38,16 @@ class LiteralNode(Node):
         return repr(self.tokens[0])
 
 class AndNode(Node):
-    print 224
     def generate(self):
         tokens = self.tokens[0]
-        print (type(tokens[::2]),21)
-        return '.*'.join(t.generate() for t in tokens[::2]) # change this to the correct form of AND in regex
+#        print (type(tokens[::2]),21)
+        join_these=[]
+#        print tokens[::2], 26
+        for t in tokens[::2]:
+            tg = t.generate()
+            tg_mod = tg[0]+'?='+tg[1:]
+            join_these.append(tg_mod)
+        return ''.join(ele for ele in join_these) # change this to the correct form of AND in regex
 
     def __repr__(self):
         return ' AND '.join(repr(t) for t in self.tokens[0].asList()[::2])
@@ -55,13 +60,28 @@ class OrNode(Node):
     def __repr__(self):
         return ' OR '.join(repr(t) for t in self.tokens[0].asList()[::2])
 
+class LineTermNode(Node):
+    def generate(self):
+        tokens = self.tokens[0]
+        ret = ''
+        dir_phr_map = {'LINE_CONTAINS': lambda a: a, 'LINE_STARTSWITH': lambda a: '^' + a}
+        for line_dir, phr_term in zip(tokens[0::2], tokens[1::2]):
+            print type(phr_term),37            
+            ret = dir_phr_map[line_dir](phr_term.generate())
+        return ret
+        
+    def __repr__(self):
+        tokens = self.tokens[0]
+        ret = repr(tokens[0])
+        dir_phr_map = {'LINE_CONTAINS': lambda a: a, 'LINE_STARTSWITH': lambda a: '^' + a}
+        for line_dir, phr_term in zip(tokens[0::2], tokens[1::2]):
+            ret = str(dir_phr_map[line_dir](str(phr_term)))
+        return ret
 
 class UpToNode(Node):
-    print 224
     def generate(self):
         tokens = self.tokens[0]
         ret = tokens[0].generate()
-        print (123123)
         word_re = r"\s+\S+"
         space_re = r"\s+"
         for op, operand in zip(tokens[1::2], tokens[2::2]):
@@ -79,33 +99,46 @@ class UpToNode(Node):
         return ret
 
 class BeforeAfterJoinNode(Node):
-    print 223
+    # This class gets input of the form 'phrase_1 B/A/J phrase_2'. The operator_opn_map is a dict, with the keys
+    # being the 3 operators and their enrties being the corresponding action, requiring 2 strings. The for loop
+    # finds the operators and their corresponding operands. before that, ret carries the generate() of the 1st
+    # element of the input, which would (i believe) invariably be phrase_1. Then, ret calls the dict element corresponding
+    # to the operator, and the element takes 2 arguments - one is ret, which is basically generated phrase_1 and 
+    # the other is generated current operand, which would basically be phrase_2 and then the dict element (which is
+    # basically a lambda function on these 2 arguments), does the relevant operation on these 2 arguments, creates 
+    # the corresponding resultant string, and ret now becomes that, and is returned.
     def generate(self):
-        print 23
         tokens = self.tokens[0]
         operator_opn_map = {'BEFORE': lambda a,b: a + '.*?' + b, 'AFTER': lambda a,b: b + '.*?' + a, 'JOIN': lambda a,b: a + '[- ]?' + b}
         ret = tokens[0].generate()
+        print (ret, 24)
         for operator, operand in zip(tokens[1::2], tokens[2::2]):
-            ret = operator_opn_map[operator](ret, operand.generate())
+            print operator, operand, 26
+            ret = operator_opn_map[operator](ret, operand.generate()) # this is basically calling a dict element, and every such element requires 2 variables (a&b), so providing them as ret and op.generate
+        print (ret, 25)
         return ret
 #        return '|'.join(t.generate() for t in tokens[::2])
     def __repr__(self):
-        return ' MMOR '.join(repr(t) for t in self.tokens[0].asList()[::2])
+        tokens = self.tokens[0]
+        ret = repr(tokens[0])
+        for operator, operand in zip(tokens[1::2], tokens[2::2]):
+            ret+= ' ' + operator + ' ' + repr(operand)
+        return ret
 
 phrase_expr = infixNotation(phrase.setParseAction(LiteralNode), 
                             [ 
-                            ((BEFORE | AFTER | JOIN), 2, opAssoc.LEFT, BeforeAfterJoinNode), # was not working earlier, because BEFORE etc. were not keyowrds, and hence parsed as words
+                            ((BEFORE | AFTER | JOIN), 2, opAssoc.LEFT, BeforeAfterJoinNode), # was not working earlier, because BEFORE etc. were not keywords, and hence parsed as words
                             (upto_expr, 2, opAssoc.LEFT, UpToNode),
                             (AND, 2, opAssoc.LEFT, AndNode),
                             (OR, 2, opAssoc.LEFT, OrNode),
                             ]) # structure of a single phrase with its operators
-#line_term = Group((LINE_CONTAINS | LINE_STARTSWITH | LINE_ENDSWITH)("line_directive") + 
-#                  Group(phrase_expr)("phrases")) # basically giving structure to a single sub-rule having line-term and phrase
-#line_contents_expr = infixNotation(line_term,
-#                                   [(AND, 2, opAssoc.LEFT,),
-#                                    (OR, 2, opAssoc.LEFT),
-#                                    ]
-#                                   ) # grammar for the entire rule/sentence
+line_term = Group((LINE_CONTAINS | LINE_STARTSWITH | LINE_ENDSWITH)("line_directive") + 
+                  (phrase_expr)("phrases")) # basically giving structure to a single sub-rule having line-term and phrase
+line_contents_expr = infixNotation(line_term.setParseAction(LineTermNode),
+                                   [(AND, 2, opAssoc.LEFT),
+                                    (OR, 2, opAssoc.LEFT),
+                                    ]
+                                   ) # grammar for the entire rule/sentence
 #
 #phrase_expr = infixNotation(line_contents_expr,
 #        [
@@ -114,7 +147,7 @@ phrase_expr = infixNotation(phrase.setParseAction(LiteralNode),
 #        (OR, 2, opAssoc.LEFT, OrNode),
 #        ])
 
-tests1 = """overexpressing gene JOIN other things""".splitlines()
+tests1 = """LINE_STARTSWITH overexpressing gene AND LINE_CONTAINS other things""".splitlines()
 tests2 = """xyz there are {upto 3 words} def then {upto 4 words} here""".splitlines()
 for t in tests1:
     t = t.strip()
@@ -122,12 +155,12 @@ for t in tests1:
         continue
     print(t, 12)
     try:
-        parsed = phrase_expr.parseString(t)
+        parsed = line_contents_expr.parseString(t)
     except ParseException as pe:
         print(' '*pe.loc + '^')
         print(pe)
         continue
 #print (parsed[0], 14)
 #print (type(parsed[0]))
-print parsed[0]
-print(parsed[0].generate(), 15)
+print parsed[0],34
+print parsed[0].generate()
