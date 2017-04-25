@@ -75,17 +75,18 @@ LINE_CONTAINS abcd {upto 4 words} xyzw {upto 3 words} pqrs BEFORE something else
 sample3 = """
 LINE_STARTSWITH Here we AND LINE_CONTAINS {phrase number 1} AND phrase 2 BEFORE {phrase number 3} AND resin JOIN gene
 """
-
+sample4 = "LINE_CONTAINS gene {downregulated OR down-regulated OR down regulated} {UPTO 2 WORDS} cells"
+sample5 = """LINE_CONTAINS {overexpress OR overexpressed OR overexpressing} gene"""
 #line_contents_expr.runTests(sample2)
 #print (line_contents_expr.numberofwords)
 #line_contents_expr.runTests(sample2)
 
 #line_contents_expr.runTests(sample2)
-parsed = line_contents_expr.parseString(sample2)
+parsed = line_contents_expr.parseString(sample5)
 #print (parsed[0].asDict())
 print (type(parsed))
-#pd = parsed.dump()
-#print pd
+pd = parsed.dump()
+print pd
 #log.write(pd)
 #log.write('\n')
 #c=pd.split()

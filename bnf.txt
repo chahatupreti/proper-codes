@@ -1,0 +1,39 @@
+lpar ::= '{'
+lpar ::= '}'
+line_directive ::= LINE_CONTAINS | LINE_STARTSWITH
+phrase ::= lpar(?) + (word+)+ rpar(?)
+
+upto_N_words ::= lpar + 'UPTO' + num + 'WORDS' + rpar
+N_words ::= lpar + num + 'WORDS' + rpar
+upto_N_characters ::= lpar + 'UPTO' + num + 'CHARACTERS' + rpar
+N_characters ::= lpar + num + 'CHARACTERS' + rpar
+
+JOIN phrase ::= phrase + JOIN + phrase
+AND phrase ::= phrase (+ JOIN + phrase)+
+OR phrase ::= phrase (+ OR + phrase)+
+BEFORE phrase ::= phrase (+ BEFORE + phrase)+
+AFTER phrase ::= phrase (+ AFTER + phrase)+
+
+braced OR phrase ::= lpar + OR phrase + rpar
+braced AND phrase ::= lpar + AND phrase + rpar
+braced BEFORE phrase ::= lpar + BEFORE phrase + rpar
+braced AFTER phrase ::= lpar + AFTER phrase + rpar
+braced JOIN phrase ::= lpar + JOIN phrase + rpar
+
+rule ::= line_directive + subrule
+final_expr ::= rule (+ AND/OR + rule)+
+
+subrule ::= phrase
+		::= OR phrase
+		::= JOIN phrase
+		::= BEFORE phrase
+		::= AFTER phrase
+		::= AND phrase
+		::= phrase + upto_N_words + phrase
+		::= braced OR phrase + phrase
+		::= phrase + braced OR phrase
+		::= phrase + braced OR phrase + phrase
+		::= phrase + upto_N_words + braced OR phrase
+		::= phrase + upto_N_characters + phrase
+		::= braced OR phrase + phrase + upto_N_words + phrase
+		::= phrase + braced OR phrase + upto_N_words + phrase

@@ -15,12 +15,12 @@ for line in iseries:
     split_line = line.split("\t");
     if split_line[0] == "!Series_geo_accession":
         v = split_line[1]
-        print v
+        print (v)
 v=v[2:-1]
-print type(v)
-print v
+print (type(v))
+print (v)
 v=str(v)
-print v
+print (v)
 p=open(os.path.join('F:\M.Tech\znew_series', v + '.txt'), 'w')    
 
 for linep in iplat:

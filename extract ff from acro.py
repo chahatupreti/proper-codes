@@ -20,6 +20,7 @@ def find_acros(sentence):
 
 
 
+
 def ffPl(sentence):
     # in each sentence check for FF probables before the (acronyms)
     for acro in acrolist:
