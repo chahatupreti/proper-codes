@@ -82,10 +82,15 @@ class UpToNode(Node):
     def generate(self):
         tokens = self.tokens[0]
         ret = tokens[0].generate()
+        print tokens,36,ret
+        for t in tokens:
+            print t, type(t),39
         word_re = r"\s+\S+"
         space_re = r"\s+"
         for op, operand in zip(tokens[1::2], tokens[2::2]):
             # op contains the parsed "upto" expression
+            print op,operand,35
+            print type(op),36
             ret += "((%s){0,%d}%s)" % (word_re, op.numberofwords, space_re) + operand.generate()
         print ret
         return ret
@@ -152,11 +157,11 @@ line_contents_expr = infixNotation(line_term.setParseAction(LineTermNode),
 #        ])
 
 tests1 = """LINE_CONTAINS gene {downregulated OR down-regulated OR down regulated} {UPTO 2 WORDS} cells""".splitlines()
-tests2 = """xyz there are {upto 3 words} def then {upto 4 words} here""".splitlines()
+tests2 = """LINE_CONTAINS xyz there are {upto 3 words} def then {upto 4 words} here""".splitlines()
 tests3 = """LINE_CONTAINS gene AND other things OR gene mutation""".splitlines()
 tests4 = """LINE_CONTAINS gene deletion OR gene""".splitlines()
 
-for t in tests3:
+for t in tests2:
     t = t.strip()
     if not t:
         continue

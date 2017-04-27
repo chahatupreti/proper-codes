@@ -82,7 +82,7 @@ sample5 = """LINE_CONTAINS {overexpress OR overexpressed OR overexpressing} gene
 #line_contents_expr.runTests(sample2)
 
 #line_contents_expr.runTests(sample2)
-parsed = line_contents_expr.parseString(sample5)
+parsed = line_contents_expr.parseString(sample2)
 #print (parsed[0].asDict())
 print (type(parsed))
 pd = parsed.dump()
