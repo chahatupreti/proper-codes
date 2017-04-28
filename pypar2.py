@@ -8,7 +8,7 @@ Created on Tue Apr 18 15:17:20 2017
 from pyparsing import *
 import re
 
-UPTO, AND, OR, WORDS = map(Literal, "upto AND OR words".split())
+UPTO, AND, OR, WORDS, CHARACTERS = map(Literal, "UPTO AND OR WORDS CHARACTERS".split())
 LBRACE,RBRACE = map(Suppress, "{}")
 integer = pyparsing_common.integer()
 
@@ -18,42 +18,26 @@ BEFORE, AFTER, JOIN = map(Literal, "BEFORE AFTER JOIN".split())
 keyword = UPTO | WORDS | AND | OR | BEFORE | AFTER | JOIN | LINE_CONTAINS | LINE_STARTSWITH
 
 class Node(object):
-
     def __init__(self, tokens):
-#        print 123
         self.tokens = tokens
-#        print 123, tokens
 
     def generate(self):
         pass
 
 class LiteralNode(Node):
-#    print 89
     def generate(self):
-        print (20)
-        for el in self.tokens[0]:
-            print (el,type(el), 19)
-#        print (type(self.tokens[0]), 18)
-        return "(%s)" %(' '.join(self.tokens[0])) # here, merged the elements, so that re.escape does not have to do an escape for the entire list
+        return "(%s)" %(''.join(self.tokens[0])) # here, merged the elements, so that re.escape does not have to do an escape for the entire list
     def __repr__(self):
         return repr(self.tokens[0])
 
 class ConsecutivePhrases(Node):
     def generate(self):
-#        print 21
         join_these=[]
         tokens = self.tokens[0]
-        print tokens, 21
-        for t in tokens:
-            print 
-            print t, type(t), 312    
-    #        temp=tokens[1]
-    #        tem=temp.generate()
-    #        print type(temp), tem.numberofwords,24
+        for t in tokens:  
             tg = t.generate()
-            print tg, type(tg),22
             join_these.append(tg)
-        return "(%s)" %(''.join(ele for ele in join_these)) # need to improve on this
+        return "%s" %(''.join(ele for ele in join_these)) # need to improve on this. Why do I have brackets?. Removed for now
                   
     def __repr__(self):
         return repr(self.tokens[0])
@@ -61,17 +45,14 @@ class ConsecutivePhrases(Node):
 class AndNode(Node):
     def generate(self):
         tokens = self.tokens[0]
-#        print (type(tokens[::2]),21)
         join_these=[]
-#        print tokens[::2], 26
         for t in tokens[::2]:
             tg = t.generate()
-            tg_mod = tg[0]+'?='+tg[1:]
+            tg_mod = tg[0]+r'?=.*\b'+tg[1:][:-1]+r'\b)' # to place the regex commands at the right place
             join_these.append(tg_mod)
         joined = ''.join(ele for ele in join_these)
         full = '('+ joined+')'
         return full
-#        return ''.join(ele for ele in join_these) # change this to the correct form of AND in regex
 
     def __repr__(self):
         return ' AND '.join(repr(t) for t in self.tokens[0].asList()[::2])
@@ -79,7 +60,6 @@ class AndNode(Node):
 
 class OrNode(Node):
     def generate(self):
-#        print 131
         tokens = self.tokens[0]
         joined = '|'.join(t.generate() for t in tokens[::2])
         full = '('+ joined+')'
@@ -90,11 +70,9 @@ class OrNode(Node):
 class LineTermNode(Node):
     def generate(self):
         tokens = self.tokens[0]
-#        print 132
         ret = ''
         dir_phr_map = {'LINE_CONTAINS': lambda a: 're.search' + a, 'LINE_STARTSWITH': lambda a: 're.search^' + a}
         for line_dir, phr_term in zip(tokens[0::2], tokens[1::2]):
-#            print type(phr_term),37            
             ret = dir_phr_map[line_dir](phr_term.generate())
         return ret
         
@@ -108,7 +86,6 @@ class LineTermNode(Node):
         
 class LineAndNode(Node):
     def generate(self):
-#        print 1234
         tokens = self.tokens[0]
         return '&&'.join(t.generate() for t in tokens[::2])
     def __repr__(self):
@@ -117,31 +94,44 @@ class LineAndNode(Node):
 class LineOrNode(Node):
     def generate(self):
         tokens = self.tokens[0]
-        return '$$'.join(t.generate() for t in tokens[::2])
+        return '@@'.join(t.generate() for t in tokens[::2])
     def __repr__(self):
         return ' ORR '.join(repr(t) for t in self.tokens[0].asList()[::2])
         
-class UpToNode(Node):
+class UpToWordsNode(Node):
     def generate(self):
         tokens = self.tokens[0]
-        print 'dfgsdfg'
         ret = ''
-        word_re = r"\s+\S+"
-        space_re = r"\s+"
+        word_re = r"([\w]+\s*)"
         for op, operand in zip(tokens[1::2], tokens[2::2]):
-            print op,43, operand,42
             # op contains the parsed "upto" expression
-            ret += "((%s){0,%d}%s)" % (word_re, op, space_re) 
-#        print ret
+            ret += "(%s{0,%d})" % (word_re, op) 
         return ret
 
     def __repr__(self):
         tokens = self.tokens[0]
-        print tokens,37
         ret = ''
         for op, operand in zip(tokens[1::2], tokens[2::2]):
             # op contains the parsed "upto" expression
             ret += " {0-%d WORDS} " % (op) + repr(operand)
+        return ret
+
+class UpToCharactersNode(Node):
+    def generate(self):
+        tokens = self.tokens[0]
+        ret = ''
+        char_re = r"\w"
+        for op, operand in zip(tokens[1::2], tokens[2::2]):
+            # op contains the parsed "upto" expression
+            ret += "((%s){0,%d})" % (word_re, op) 
+        return ret
+
+    def __repr__(self):
+        tokens = self.tokens[0]
+        ret = ''
+        for op, operand in zip(tokens[1::2], tokens[2::2]):
+            # op contains the parsed "upto" expression
+            ret += " {0-%d CHARACTERS} " % (op) + repr(operand)
         return ret
 
 class BeforeAfterJoinNode(Node):
@@ -157,13 +147,9 @@ class BeforeAfterJoinNode(Node):
         tokens = self.tokens[0]
         operator_opn_map = {'BEFORE': lambda a,b: a + '.*?' + b, 'AFTER': lambda a,b: b + '.*?' + a, 'JOIN': lambda a,b: a + '[- ]?' + b}
         ret = tokens[0].generate()
-#        print (ret, 24)
         for operator, operand in zip(tokens[1::2], tokens[2::2]):
-#            print operator, operand, 26
             ret = operator_opn_map[operator](ret, operand.generate()) # this is basically calling a dict element, and every such element requires 2 variables (a&b), so providing them as ret and op.generate
-#        print (ret, 25)
         return ret
-#        return '|'.join(t.generate() for t in tokens[::2])
     def __repr__(self):
         tokens = self.tokens[0]
         ret = repr(tokens[0])
@@ -171,10 +157,11 @@ class BeforeAfterJoinNode(Node):
             ret+= ' ' + operator + ' ' + repr(operand)
         return ret
 
-word = ~keyword + Word(alphas)
-upto_expr = Group(LBRACE + UPTO + integer("numberofwords") + WORDS + RBRACE).setParseAction(UpToNode)
+word = ~keyword + Word(alphas, alphanums+'-_')
+uptowords_expr = Group(LBRACE + UPTO + integer("numberofwords") + WORDS + RBRACE).setParseAction(UpToWordsNode)
+uptochars_expr = Group(LBRACE + UPTO + integer("numberofchars") + CHARACTERS + RBRACE).setParseAction(UpToCharactersNode)
 some_words = OneOrMore(word).setParseAction(' '.join, LiteralNode)
-phrase_item = some_words | upto_expr
+phrase_item = some_words | uptowords_expr | uptochars_expr
 #phrase_item = Group(OneOrMore(word)).setParseAction((lambda s,l,t: ' '.join(t[0])), LiteralNode) | upto_expr
 
 phrase_expr = infixNotation(phrase_item, 
@@ -197,15 +184,18 @@ line_contents_expr = infixNotation(line_term.setParseAction(LineTermNode),
                                    ) # grammar for the entire rule/sentence
 
 tests1 = """LINE_CONTAINS gene {downregulated OR down-regulated OR down regulated} {UPTO 2 WORDS} cells""".splitlines()
-tests2 = """LINE_CONTAINS xyz there are {upto 3 words} def then {upto 4 words} here""".splitlines()
+tests2 = """LINE_CONTAINS xyz there are {UPTO 3 WORDS} def then {UPTO 4 WORDS} here""".splitlines()
 tests3 = """LINE_CONTAINS gene AND other things OR gene mutation""".splitlines()
-tests4 = """LINE_CONTAINS gene AND LINE_STARTSWITH Here we""".splitlines()
-tests5 = """LINE_CONTAINS {overexpress AND overexpressed AND overexpressing} gene here""".splitlines()
-for t in tests2:
+tests4 = """LINE_CONTAINS gene AND LINE_STARTSWITH Here we OR  LINE_CONTAINS others""".splitlines()
+tests5 = """LINE_CONTAINS {overexpress OR overexpressed OR overexpressing} gene here""".splitlines()
+tests6 = """LINE_CONTAINS {gene JOIN KO} effect AND LINE_STARTSWITH Here we OR There we""".splitlines()
+tests7 = """LINE_CONTAINS the objective of this study was {to identify OR identifying} genes transcriptionally upregulated""".splitlines()
+
+for t in tests7:
     t = t.strip()
     if not t:
         continue
-    print(t, 12)
+#    print(t, 12)
     print 
     try:
         parsed = line_contents_expr.parseString(t)
@@ -213,8 +203,11 @@ for t in tests2:
         print(' '*pe.loc + '^')
         print(pe)
         continue
-#print (parsed[0], 14)
-#print (type(parsed[0]))
-print parsed[0],34
+
+#print parsed[0],34
 print 
-print parsed[0].generate()
+#print parsed[0].generate()
+temp_regex = parsed[0].generate()
+final_regexes1 = re.sub('&&',' AND ',temp_regex) 
+final_regexes = re.sub('@@',' OR ',final_regexes1) 
+print final_regexes 
